@@ -19,23 +19,6 @@ choose "New app" on https://share.streamlit.io
 import hashlib
 import io
 import zipfile
-import subprocess, sys
-
-def _ensure_headless_cv2():
-    try:
-        import cv2  # noqa
-        return
-    except ImportError:
-        pass
-    for pkg in ("opencv-python", "opencv-contrib-python"):
-        subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", pkg],
-                       check=False)
-    subprocess.check_call([sys.executable, "-m", "pip", "install",
-                           "opencv-python-headless==4.8.1.78"])
-    import cv2  # noqa
-
-_ensure_headless_cv2()
-
 import cv2
 import numpy as np
 import streamlit as st
