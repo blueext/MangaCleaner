@@ -89,6 +89,19 @@ def get_reader(languages, gpu):
     import easyocr
     return easyocr.Reader(list(languages), gpu=gpu)
 
+def plan_readers(languages):
+    """Split languages into EasyOCR-compatible groups.
+    'ja' can only coexist with 'en', so it gets its own pass."""
+    langs = set(languages)
+    groups = []
+    if "ja" in langs:
+        groups.append(["ja", "en"] if "en" in langs else ["ja"])
+        langs.discard("ja")
+        langs.discard("en")
+    if langs:
+        groups.append(sorted(langs))
+    return groups
+
 
 @st.cache_resource(show_spinner="Loading LaMa model …")
 def get_lama(device):
@@ -257,8 +270,8 @@ st.success(f"{len(inputs)} image(s) ready: "
 run = st.button("✨ Remove text", type="primary", use_container_width=True)
 
 if run:
-    reader = get_reader(tuple(languages), gpu)
     lama = get_lama("cuda" if gpu else "cpu")
+    readers = [get_reader(tuple(g), gpu) for g in plan_readers(languages)]
 
     results = {}   # name -> {"clean": bytes, "mask": bytes|None}
     prog = st.progress(0.0, text="Starting …")
@@ -274,8 +287,12 @@ if run:
                 raise ValueError("could not decode image")
             h, w = img.shape[:2]
 
-            boxes = detect_text_boxes(img, reader, int(win),
-                                      int(overlap), float(conf))
+            boxes = []
+            for reader in readers:
+                boxes += detect_text_boxes(img, reader,
+                                           int(win), int(overlap),
+                                           float(conf))
+            boxes = merge_boxes(boxes)
             mask = build_mask(img.shape, boxes, int(dilate))
             clean = inpaint_lama_tiled(img, mask, lama,
                                        tile=int(tile))
