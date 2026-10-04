@@ -1,6 +1,6 @@
-streamlit>=1.32
-easyocr
-simple-lama-inpainting
-pillow
-numpy
+streamlit==1.40.2
+easyocr==1.7.2
+simple-lama-inpainting==0.1.2
+pillow==9.5.0
+numpy==1.26.4
 opencv-python-headless==4.8.1.78
